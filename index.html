@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SubZero — Subscription Control</title>
+<style>
+:root { color-scheme: light dark; --bg: light-dark(#f4f7fb,#090f1c); --panel: light-dark(#ffffff,#111b2b); --panel2: light-dark(#edf2f8,#172438); --text: light-dark(#132033,#f1f6ff); --muted: light-dark(#64748b,#94a8c4); --line: light-dark(#dce5f0,#25344b); --accent:#45d7e8; --accent2:#9b8cff; --good:#38d9a9; --danger:#ff718b; }
+* { box-sizing: border-box; }
+[hidden] { display:none !important; }
+body { margin:0; background:var(--bg); color:var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+button,input,select { font:inherit; }
+button { cursor:pointer; }
+.app { min-height:100vh; background-color:var(--bg); padding:24px; }
+.shell { max-width:1180px; margin:0 auto; }
+.topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:32px; }
+.brand { display:flex; align-items:center; gap:12px; }
+.logo { width:44px; height:44px; border-radius:14px; display:grid; place-items:center; background:linear-gradient(145deg,#5ee7f3,#7c70f6); color:#071222; font-size:25px; font-weight:900; box-shadow:0 8px 30px #45d7e82a; }
+.brand h1 { font-size:22px; margin:0; letter-spacing:-.7px; }
+.brand p { margin:3px 0 0; color:var(--muted); font-size:12px; }
+.top-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.auth-panel { margin-bottom:18px; padding:16px 20px; border:1px solid var(--line); border-radius:18px; background:var(--panel); }
+.auth-row { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.auth-form { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; align-items:center; }
+.auth-form input { min-width:180px; flex:1; padding:11px; border-radius:10px; border:1px solid var(--line); background:var(--bg); color:var(--text); }
+.auth-message { color:var(--muted); font-size:12px; margin-top:10px; line-height:1.5; }
+.auth-buttons { display:flex; flex-wrap:wrap; gap:8px; }
+.pill { border:1px solid var(--line); background:var(--panel); color:var(--muted); padding:9px 13px; border-radius:999px; font-size:12px; }
+.btn { border:0; border-radius:12px; padding:12px 16px; font-weight:750; color:#071222; background:var(--accent); box-shadow:0 7px 22px #45d7e81c; }
+.btn:hover { filter:brightness(1.06); transform:translateY(-1px); }
+.btn.secondary { background:var(--panel2); color:var(--text); border:1px solid var(--line); box-shadow:none; }
+.hero { display:flex; align-items:end; justify-content:space-between; gap:20px; margin-bottom:22px; }
+.eyebrow { color:var(--accent); font-size:11px; text-transform:uppercase; letter-spacing:2px; font-weight:800; }
+h2 { margin:8px 0 7px; font-size:clamp(27px,4vw,39px); line-height:1.08; letter-spacing:-1.4px; }
+.subhead { color:var(--muted); margin:0; max-width:560px; line-height:1.55; font-size:14px; }
+.stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:20px; }
+.stat { background:var(--panel); border:1px solid var(--line); border-radius:19px; padding:20px; min-width:0; }
+.stat-top { display:flex; justify-content:space-between; align-items:center; gap:8px; color:var(--muted); font-size:12px; }
+.stat-icon { width:31px; height:31px; border-radius:10px; display:grid; place-items:center; background:var(--panel2); color:var(--accent); font-size:16px; }
+.stat-value { font-size:clamp(24px,3vw,33px); font-weight:800; letter-spacing:-1px; margin-top:15px; }
+.stat-note { color:var(--muted); font-size:11px; margin-top:5px; }
+.content-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(270px,.85fr); gap:16px; }
+.panel { border:1px solid var(--line); background:var(--panel); border-radius:20px; overflow:hidden; min-width:0; }
+.panel-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:20px 20px 14px; }
+.panel-head h3 { margin:0; font-size:16px; letter-spacing:-.3px; }
+.panel-head p { margin:5px 0 0; font-size:12px; color:var(--muted); }
+.text-btn { border:0; background:transparent; color:var(--accent); font-size:12px; font-weight:750; padding:8px 0; }
+.sub-list { padding:0 12px 12px; }
+.sub-row { display:flex; align-items:center; gap:12px; padding:13px 9px; border-top:1px solid var(--line); }
+.app-icon { width:43px; height:43px; border-radius:14px; display:grid; place-items:center; font-size:20px; flex-shrink:0; background:var(--panel2); }
+.sub-info { min-width:0; flex:1; }
+.sub-name { font-weight:750; font-size:13px; }
+.sub-meta { font-size:11px; color:var(--muted); margin-top:4px; }
+.sub-cost { text-align:right; font-size:13px; font-weight:800; white-space:nowrap; }
+.sub-cost span { display:block; color:var(--muted); font-size:10px; font-weight:500; margin-top:4px; }
+.more { border:1px solid var(--line); color:var(--muted); background:transparent; border-radius:9px; padding:6px 9px; margin-left:3px; }
+.empty { text-align:center; padding:34px 15px; color:var(--muted); font-size:13px; }
+.empty b { color:var(--text); display:block; margin-bottom:6px; }
+.side-stack { display:flex; flex-direction:column; gap:16px; }
+.next-card { padding:19px; background:linear-gradient(145deg,#13283c,#17203a); color:#f4fbff; border:1px solid #2a4762; border-radius:20px; }
+.next-card .eyebrow { color:#72e8f1; }
+.next-card h3 { font-size:18px; margin:8px 0 5px; }
+.next-card p { color:#a9bfd4; font-size:12px; line-height:1.5; margin:0; }
+.renewal { margin-top:17px; display:flex; align-items:center; gap:11px; }
+.datebox { border:1px solid #35516a; border-radius:11px; min-width:48px; padding:8px 4px; text-align:center; }
+.datebox b { display:block; font-size:17px; }
+.datebox span { font-size:9px; color:#9db7cf; text-transform:uppercase; }
+.renewal-info { flex:1; min-width:0; }
+.renewal-info b { font-size:12px; }
+.renewal-info span { display:block; color:#a9bfd4; font-size:10px; margin-top:4px; }
+.renewal strong { font-size:12px; }
+.tips { padding:20px; }
+.tips h3 { margin:0 0 14px; font-size:15px; }
+.tip { display:flex; gap:11px; padding:11px 0; border-top:1px solid var(--line); }
+.tip-symbol { color:var(--accent); font-size:16px; }
+.tip b { font-size:12px; display:block; }
+.tip p { margin:4px 0 0; color:var(--muted); font-size:11px; line-height:1.45; }
+.footer { color:var(--muted); font-size:10px; line-height:1.5; margin:20px 4px 0; }
+.modal-backdrop { position:fixed; inset:0; background:#020817b8; display:none; align-items:center; justify-content:center; padding:18px; z-index:5; }
+.modal-backdrop.open { display:flex; }
+.modal { width:min(100%,460px); background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:22px; padding:24px; box-shadow:0 30px 100px #0006; }
+.modal h3 { margin:0 0 6px; font-size:21px; }
+.modal .muted { color:var(--muted); font-size:12px; margin:0 0 20px; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+.field { display:flex; flex-direction:column; gap:7px; min-width:0; }
+.field.full { grid-column:1/-1; }
+.field label { font-size:11px; color:var(--muted); font-weight:700; }
+.field input,.field select { width:100%; padding:11px 12px; background:var(--bg); border:1px solid var(--line); border-radius:10px; color:var(--text); outline:none; }
+.field input:focus,.field select:focus { border-color:var(--accent); }
+.modal-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:20px; }
+.toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:var(--text); color:var(--bg); padding:12px 18px; border-radius:12px; font-size:12px; font-weight:750; box-shadow:0 10px 40px #0003; display:none; z-index:10; }
+.toast.show { display:block; }
+@media(max-width:800px) { .app { padding:17px; } .content-grid { grid-template-columns:1fr; } .side-stack { display:grid; grid-template-columns:1fr 1fr; } }
+@media(max-width:560px) { .topbar { align-items:flex-start; } .pill { display:none; } .hero { align-items:flex-start; flex-direction:column; } .stats { grid-template-columns:1fr 1fr; } .stat:last-child { grid-column:1/-1; } .side-stack { display:flex; } .form-grid { grid-template-columns:1fr; } .field.full { grid-column:auto; } .sub-row { gap:8px; } .sub-cost { font-size:12px; } }
+
+/* SubZero 2.0 — responsive dashboard refinement */
+:root { color-scheme:dark; --bg:#070e1b;--panel:#111d30;--panel2:#192a41;--text:#edf7ff;--muted:#9aafc9;--line:#263950;--accent:#52e0ee; }
+body { background:radial-gradient(ellipse 80% 32% at 48% -9%,#193d5b 0%,transparent 80%),var(--bg); }
+.app { background:transparent; }
+.shell { max-width:1220px; }
+.topbar { padding:10px 0 19px;border-bottom:1px solid var(--line);margin-bottom:26px; }
+.logo { background:linear-gradient(140deg,#6df0ee,#78a9ff);box-shadow:0 8px 34px #4ce0ef27; }
+.brand h1 { font-size:25px; }
+.auth-panel,.stat,.panel { box-shadow:0 12px 40px #00000017; }
+.auth-panel { border-radius:20px; }
+.hero { padding:24px 2px 8px; }
+.hero h2 { font-size:clamp(33px,5vw,53px);line-height:1.07;letter-spacing:-2px; }
+.eyebrow { letter-spacing:2.4px; }
+.stat { position:relative;overflow:hidden;transition:transform .18s ease,border-color .18s ease; }
+.stat:hover { transform:translateY(-2px);border-color:#365772; }
+.stat:first-child:after { content:'';position:absolute;width:160px;height:160px;border-radius:50%;right:-75px;bottom:-110px;background:#45d7e811;pointer-events:none; }
+.stat-value { font-variant-numeric:tabular-nums; }
+.btn { transition:transform .15s ease,filter .15s ease; }
+.btn:active { transform:translateY(0); }
+.btn:focus-visible,.more:focus-visible,.text-btn:focus-visible,input:focus-visible,select:focus-visible { outline:2px solid var(--accent);outline-offset:3px; }
+.panel { border-radius:22px; }
+.sub-row { transition:background .15s ease;border-radius:12px; }
+.sub-row:hover { background:#ffffff08; }
+.sub-name { font-size:14px; }
+.sub-meta { font-size:12px; }
+.next-card { background:linear-gradient(135deg,#163d52,#17223f 78%); }
+.list-tools { display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:0 20px 15px; }
+.list-tools input,.list-tools select { min-width:0;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:11px;padding:11px 12px; }
+.list-tools input { flex:1;min-width:140px; }
+.list-tools select { max-width:165px; }
+.list-tools input:focus,.list-tools select:focus { border-color:var(--accent);outline:none; }
+.sub-list { min-height:85px; }
+.account-password { display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:13px; }
+.account-password input { flex:1;min-width:180px;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text); }
+.account-password label { font-size:12px;color:var(--muted);width:100%; }
+.account-password .btn { white-space:nowrap; }
+@media(max-width:560px) {
+ .app { padding:14px; }.topbar { gap:12px; }.top-actions .btn { padding:10px 11px;font-size:12px; }
+ .brand h1 { font-size:21px; }.brand p { font-size:9px; }.logo { width:39px;height:39px; }
+ .hero { padding-top:8px; }.hero h2 { font-size:37px; }.stats { gap:9px; }.stat { padding:16px; }
+ .stat-value { font-size:25px; }.stat-note { line-height:1.45; }
+ .panel-head { padding:17px 15px 12px; }.list-tools { padding:0 14px 13px; }
+ .sub-list { padding:0 7px 10px; }.sub-row { gap:7px;padding:12px 6px; }.app-icon { width:36px;height:36px;border-radius:11px; }
+ .sub-cost { font-size:11px; }.more { padding:6px 7px;margin-left:0; }.auth-panel { padding:15px; }
+}
+@media(prefers-reduced-motion:reduce) { *,*:before,*:after { transition:none!important;scroll-behavior:auto!important; } }
+</style>
+</head>
+<body>
+<div class="app" id="appRoot">
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><div class="logo">❄</div><div><h1>SubZero</h1><p>YOUR SUBSCRIPTIONS. UNDER CONTROL.</p></div></div>
+      <div class="top-actions"><span class="pill">✦ Private by design</span><button class="btn" id="addTop">＋ Add subscription</button></div>
+    </header>
+    <section class="auth-panel" aria-label="Account and sync">
+      <div class="auth-row"><div><b id="authTitle">Cloud sync (optional)</b><div class="auth-message" id="authStatus">Your existing subscriptions are saved in this browser. Sign in to sync across devices.</div></div><div class="auth-buttons"><button class="btn secondary" id="authToggle">Sign in / Sign up</button><button class="btn secondary" id="signOutBtn" hidden>Sign out</button><button class="btn secondary" id="changePasswordBtn" hidden>Change password</button><button class="btn secondary" id="importBtn" hidden>Import this browser's subscriptions</button></div></div>
+      <form id="authForm" class="auth-form" hidden><input type="email" id="authEmail" autocomplete="email" placeholder="Email address" required><input type="password" id="authPassword" autocomplete="current-password" minlength="6" placeholder="Password (6+ characters)" required><button class="btn" type="submit" id="loginBtn">Sign in</button><button class="btn secondary" type="button" id="signupBtn">Create account</button><button class="text-btn" type="button" id="forgotBtn">Forgot password?</button></form>
+      <form id="changePasswordForm" class="account-password" hidden><label for="accountNewPassword">Change your password (12 characters minimum)</label><input id="accountNewPassword" type="password" autocomplete="new-password" minlength="12" placeholder="New password" required><input id="accountConfirmPassword" type="password" autocomplete="new-password" minlength="12" placeholder="Confirm new password" required><button class="btn" type="submit">Save password</button><button class="btn secondary" id="cancelPassword" type="button">Cancel</button></form>
+      <form id="resetForm" class="auth-form" hidden><input id="newPassword" type="password" autocomplete="new-password" minlength="12" placeholder="New password (12+ characters)" required><input id="confirmPassword" type="password" autocomplete="new-password" minlength="12" placeholder="Confirm new password" required><button class="btn" type="submit">Update password</button></form>
+    </section>
+    <section class="hero">
+      <div><div class="eyebrow">Your money, made clearer</div><h2>Stay on top of<br>every renewal.</h2><p class="subhead">One simple place to track recurring costs, spot upcoming payments, and stay in control of your subscriptions.</p></div>
+      <button class="btn secondary" id="exportBtn">↓ Export list</button>
+    </section>
+    <section class="stats" aria-label="Subscription summary">
+      <article class="stat"><div class="stat-top"><span>Monthly spend</span><span class="stat-icon">↗</span></div><div class="stat-value" id="monthlyTotal">$0.00</div><div class="stat-note">Your recurring costs, normalized monthly</div></article>
+      <article class="stat"><div class="stat-top"><span>Yearly estimate</span><span class="stat-icon">◷</span></div><div class="stat-value" id="yearlyTotal">$0</div><div class="stat-note">If your subscriptions stay unchanged</div></article>
+      <article class="stat"><div class="stat-top"><span>Active subscriptions</span><span class="stat-icon">▤</span></div><div class="stat-value" id="activeCount">0</div><div class="stat-note" id="upcomingNote">Add your first subscription to begin</div></article>
+    </section>
+    <section class="content-grid">
+      <article class="panel">
+        <div class="panel-head"><div><h3>Your subscriptions</h3><p>Keep all your recurring payments in one view.</p></div><button class="text-btn" id="addInline">＋ Add new</button></div>
+        <div class="list-tools"><input id="subSearch" type="search" placeholder="Search subscriptions…" aria-label="Search subscriptions"><select id="subFilter" aria-label="Filter by category"><option value="all">All categories</option><option>Entertainment</option><option>Music</option><option>Gaming</option><option>Software</option><option>Fitness</option><option>Shopping</option><option>Other</option></select></div><div class="sub-list" id="subList"></div>
+      </article>
+      <aside class="side-stack">
+        <section class="next-card"><div class="eyebrow">Coming up</div><h3>Renewals at a glance</h3><p>Your next expected payments, all in one place.</p><div id="renewalList"></div></section>
+        <section class="panel tips"><h3>Make SubZero work for you</h3><div class="tip"><span class="tip-symbol">✧</span><div><b>Start with the small charges</b><p>Forgotten subscriptions can be easy to overlook. Add the ones you use and review the rest.</p></div></div><div class="tip"><span class="tip-symbol">◷</span><div><b>Check dates before renewal</b><p>Use the next-payment date to plan ahead. SubZero shows renewal dates but does not send automatic notifications.</p></div></div><div class="tip"><span class="tip-symbol">⌁</span><div><b>Saved on this device</b><p>Subscriptions are saved in this browser unless you sign in for cloud sync. Export a CSV backup regularly.</p></div></div></section>
+      </aside>
+    </section>
+    <p class="footer">SUBZERO · Cloud sync is optional. No bank connections, actual billing, or automatic notifications. Do not enter bank passwords or payment card numbers. Before a public launch, test account security and publish a privacy policy.</p>
+  </main>
+</div>
+<div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <form class="modal" id="subscriptionForm"><h3 id="modalTitle">Add a subscription</h3><p class="muted">Enter the basics. You can update them any time.</p>
+    <div class="form-grid">
+      <div class="field full"><label for="serviceName">Subscription name</label><input id="serviceName" name="serviceName" placeholder="e.g. Music streaming" required maxlength="60"></div>
+      <div class="field"><label for="price">Price (USD)</label><input id="price" name="price" type="number" min="0.01" step="0.01" placeholder="9.99" required></div>
+      <div class="field"><label for="frequency">Billing frequency</label><select id="frequency" name="frequency"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="weekly">Weekly (browser-only)</option></select></div>
+      <div class="field"><label for="nextDate">Next payment date</label><input id="nextDate" name="nextDate" type="date" required></div>
+      <div class="field"><label for="category">Category</label><select id="category" name="category"><option>Entertainment</option><option>Music</option><option>Gaming</option><option>Software</option><option>Fitness</option><option>Shopping</option><option>Other</option></select></div>
+    </div>
+    <div class="modal-actions"><button type="button" class="btn secondary" id="cancelModal">Cancel</button><button type="submit" class="btn">Save subscription</button></div>
+  </form>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+const $ = id => document.getElementById(id);
+const KEY = 'subzero-subscriptions-v1';
+// Public project URL. Paste only your Supabase PUBLISHABLE key into the setup field.
+const SUPABASE_URL = 'https://nekelfgwoitfjjyvjvmf.supabase.co';
+const CONFIG_KEY = 'subzero-public-supabase-key';
+const SESSION_KEY = 'subzero-supabase-session';
+let publishableKey = 'sb_publishable_wklGVcOhLvCREBWK6Hxr5Q_SZlTJm2Z';
+let session = null;
+let cloudMode = false;
+let localBackup = [];
+let recoveryMode = false;
+let recoveryAccessToken = null;
+const authHeaders = (token=null) => ({'apikey':publishableKey, 'Content-Type':'application/json', ...(token?{'Authorization':'Bearer '+token}:{})});
+async function api(path, opts={}) {
+ const res=await fetch(SUPABASE_URL+path,{...opts,headers:{...authHeaders(session?.access_token),...(opts.headers||{})}});
+ const body=await res.text();let data;try{data=body?JSON.parse(body):null;}catch{data=body;}
+ if(!res.ok)throw new Error(data?.msg||data?.message||data?.error_description||data?.error||'Request failed ('+res.status+')');
+ return data;
+}
+function authMessage(msg){$('authStatus').textContent=msg;}
+function keySetup(){
+ if(publishableKey)return true;
+ const k=prompt('Paste your Supabase PUBLISHABLE key (sb_publishable_...). Never paste a secret key.');
+ if(!k)return false;
+ if(!k.startsWith('sb_publishable_')){showToast('Only a publishable key is allowed.');return false;}
+ publishableKey=k.trim();localStorage.setItem(CONFIG_KEY,publishableKey);return true;
+}
+function mapRow(r){return {id:r.id,name:r.name,price:Number(r.price),frequency:r.billing_cycle,date:r.renewal_date,category:r.category||'Other'};}
+function cloudRow(s){return {id:s.id,user_id:session.user.id,name:s.name,price:s.price,billing_cycle:s.frequency,renewal_date:s.date,category:s.category};}
+async function refreshSession(){
+ if(!session?.refresh_token)return false;
+ try{const fresh=await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})});session=fresh;localStorage.setItem(SESSION_KEY,JSON.stringify(session));return true;}catch{return false;}
+}
+async function ensureSession(){if(!session)return false;if(session.expires_at && Date.now()/1000 > session.expires_at-60){if(!await refreshSession()){await signOut();throw new Error('Session expired. Please sign in again.');}}return true;}
+async function cloudLoad(){
+ await ensureSession();const rows=await api('/rest/v1/subscriptions?select=*&order=created_at.asc');
+ subscriptions=rows.map(mapRow);cloudMode=true;render();updateAuthUI();
+ authMessage('Signed in as '+session.user.email+'. Your subscriptions sync across devices.');
+}
+function updateAuthUI(){
+ $('authTitle').textContent=cloudMode?'Cloud sync enabled':'Cloud sync (optional)';
+ $('signOutBtn').hidden=!cloudMode;$('authToggle').hidden=cloudMode;if(!recoveryMode)$('authForm').hidden=true;$('changePasswordBtn').hidden=!cloudMode;
+ $('importBtn').hidden=!cloudMode||!localBackup.length;
+  if(!cloudMode)$('changePasswordForm').hidden=true;
+}
+async function signOut(){
+ session=null;cloudMode=false;localStorage.removeItem(SESSION_KEY);
+ subscriptions=readLocal();render();updateAuthUI();authMessage('Signed out. Showing this browser’s saved subscriptions.');
+}
+async function cloudSave(s){
+ await ensureSession();
+ const existing=await api('/rest/v1/subscriptions?id=eq.'+encodeURIComponent(s.id)+'&select=id');
+ if(existing.length){await api('/rest/v1/subscriptions?id=eq.'+encodeURIComponent(s.id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(cloudRow(s))});}
+ else{await api('/rest/v1/subscriptions',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(cloudRow(s))});}
+}
+async function cloudDelete(id){await ensureSession();await api('/rest/v1/subscriptions?id=eq.'+encodeURIComponent(id),{method:'DELETE'});}
+function readLocal(){try{const a=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(a)?a:[];}catch{return [];}}
+
+const icons = {Music:'♫',Gaming:'⌘',Software:'☁',Fitness:'✚',Shopping:'◇',Entertainment:'▶'};
+const colors = {Entertainment:'#e54b55',Music:'#2acb86',Gaming:'#8d83ff',Software:'#49bde8',Fitness:'#e6a04a',Shopping:'#ed79c6',Other:'#45d7e8'};
+let subscriptions = [];
+let editingId = null;
+let storageAvailable = true;
+try { const raw=localStorage.getItem(KEY); if(raw){const data=JSON.parse(raw);if(Array.isArray(data))subscriptions=data.filter(s=>s && typeof s.name==='string' && Number.isFinite(s.price) && s.price>0 && /^\d{4}-\d{2}-\d{2}$/.test(s.date) && ['weekly','monthly','yearly'].includes(s.frequency));} } catch(e) { storageAvailable=false; }
+function persist(){if(cloudMode)return;try{localStorage.setItem(KEY,JSON.stringify(subscriptions));storageAvailable=true;}catch(e){storageAvailable=false;showToast('Could not save in this browser. Export a backup.');}}
+function futureDate(days){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+days);return formatDate(d);}
+function formatDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function money(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n)}
+function monthly(s){return s.price*(s.frequency==='yearly'?1/12:s.frequency==='weekly'?52/12:1)}
+function dateObj(s){return new Date(s+'T12:00:00')}
+function nextDate(s){let d=dateObj(s.date);const today=dateObj(futureDate(0));if(!Number.isFinite(d.getTime()))return today;let i=0;while(d<today && i++<1200){if(s.frequency==='weekly')d.setDate(d.getDate()+7);else{const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+(s.frequency==='yearly'?12:1));const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));}}return d;}
+function dateParts(d){return {day:d.getDate(),month:d.toLocaleDateString('en-US',{month:'short'})}}
+function escapeHTML(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showToast(message){const t=$('toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+function render(){
+ const m=subscriptions.reduce((a,s)=>a+monthly(s),0);
+ $('monthlyTotal').textContent=money(m);$('yearlyTotal').textContent=money(m*12).replace(/\.00$/,'');$('activeCount').textContent=subscriptions.length;
+ const upcoming=[...subscriptions].sort((a,b)=>nextDate(a)-nextDate(b));
+ $('upcomingNote').textContent=upcoming.length?`${upcoming.length} renewal${upcoming.length===1?'':'s'} tracked`:'Add your first subscription to begin';
+ const term=$('subSearch').value.trim().toLocaleLowerCase();const category=$('subFilter').value;
+ const visible=subscriptions.filter(s=>(category==='all'||s.category===category)&&s.name.toLocaleLowerCase().includes(term));
+ $('subList').innerHTML=visible.length?visible.map(s=>`<div class="sub-row"><div class="app-icon" style="color:${colors[s.category]||'var(--accent)'}">${icons[s.category]||'◈'}</div><div class="sub-info"><div class="sub-name">${escapeHTML(s.name)}</div><div class="sub-meta">${escapeHTML(s.category)} · Next: ${nextDate(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div><div class="sub-cost">${money(s.price)}<span>/${s.frequency==='yearly'?'year':s.frequency==='weekly'?'week':'month'}</span></div><button class="more" title="Edit ${escapeHTML(s.name)}" aria-label="Edit ${escapeHTML(s.name)}" data-edit="${escapeHTML(s.id)}">✎</button><button class="more" title="Remove ${escapeHTML(s.name)}" aria-label="Remove ${escapeHTML(s.name)}" data-remove="${escapeHTML(s.id)}">×</button></div>`).join(''):`<div class="empty"><b>${subscriptions.length?'No matching subscriptions':'No subscriptions yet'}</b>${subscriptions.length?'Try another search or category.':'Add your first recurring payment to see your monthly total here.<br><br><button class="btn" id="emptyAdd">＋ Add subscription</button>'}</div>`;
+ $('renewalList').innerHTML=upcoming.length?upcoming.slice(0,3).map(s=>{const p=dateParts(nextDate(s));return `<div class="renewal"><div class="datebox"><b>${p.day}</b><span>${p.month}</span></div><div class="renewal-info"><b>${escapeHTML(s.name)}</b><span>${escapeHTML(s.category)}</span></div><strong>${money(s.price)}</strong></div>`}).join(''):`<div class="renewal"><p style="color:#a9bfd4;font-size:12px">Your upcoming payments will appear here.</p></div>`;
+ if($('emptyAdd'))$('emptyAdd').addEventListener('click',()=>openModal());
+ document.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.edit)));
+ document.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',async()=>{const s=subscriptions.find(x=>String(x.id)===b.dataset.remove);if(!s||!confirm(`Remove ${s.name}?`))return;try{if(cloudMode)await cloudDelete(s.id);subscriptions=subscriptions.filter(x=>x.id!==s.id);persist();render();showToast('Subscription removed.');}catch(e){showToast('Delete failed: '+e.message);}}));
+}
+function openModal(id=null){editingId=id;$('subscriptionForm').reset();const s=subscriptions.find(x=>String(x.id)===String(id));$('modalTitle').textContent=s?'Edit subscription':'Add a subscription';$('serviceName').value=s?.name||'';$('price').value=s?.price||'';$('frequency').value=s?.frequency||'monthly';$('nextDate').value=s?.date||futureDate(7);$('category').value=s?.category||'Entertainment';$('modalBackdrop').classList.add('open');$('serviceName').focus();}
+function closeModal(){$('modalBackdrop').classList.remove('open');editingId=null;}
+$('addTop').addEventListener('click',()=>openModal());$('addInline').addEventListener('click',()=>openModal());$('cancelModal').addEventListener('click',closeModal);
+$('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+$('subscriptionForm').addEventListener('submit',async e=>{
+ e.preventDefault();const name=$('serviceName').value.trim(),price=Number($('price').value),frequency=$('frequency').value,date=$('nextDate').value,category=$('category').value;
+ if(!name||!Number.isFinite(price)||price<=0||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)){showToast('Please check the details and try again.');return;}
+ if(cloudMode&&frequency==='weekly'){showToast('Cloud database supports monthly/yearly only. Choose one of those.');return;}
+ const existing=subscriptions.find(s=>String(s.id)===String(editingId));
+ const item={id:existing?.id||(cloudMode?crypto.randomUUID():String(Date.now())+Math.floor(Math.random()*1000)),name,price,frequency,date,category};
+ try{if(cloudMode)await cloudSave(item);if(existing)subscriptions=subscriptions.map(s=>s.id===existing.id?item:s);else subscriptions.push(item);persist();render();closeModal();showToast(existing?'Subscription updated.':'Subscription saved.');}
+ catch(err){showToast('Could not save: '+err.message);}
+});
+$('authToggle').addEventListener('click',()=>{if(!keySetup())return;$('authForm').hidden=!$('authForm').hidden;});
+async function authenticate(kind){
+ if(!keySetup())return;
+ const email=$('authEmail').value.trim(),password=$('authPassword').value;
+ if(!email||password.length<6){authMessage('Enter an email and password of at least 6 characters.');return;}
+ try{
+  if(kind==='signup'){
+   const data=await api('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password})});
+   if(!data.access_token){authMessage('Account requested. Check your email for a confirmation link, then return and sign in.');return;}
+   session=data;
+  }else{
+   session=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
+  }
+  localStorage.setItem(SESSION_KEY,JSON.stringify(session));localBackup=readLocal();await cloudLoad();
+ }catch(err){authMessage('Authentication failed: '+err.message);}
+}
+$('authForm').addEventListener('submit',e=>{e.preventDefault();authenticate('signin');});
+$('signupBtn').addEventListener('click',()=>authenticate('signup'));
+$('forgotBtn').addEventListener('click',async()=>{
+ if(!keySetup())return;
+ const email=$('authEmail').value.trim();
+ if(!email){authMessage('Enter your email address first, then click Forgot password?');return;}
+ try{
+  await api('/auth/v1/recover',{method:'POST',body:JSON.stringify({email}),headers:{}});
+  authMessage('If that email has an account, a recovery email will arrive. Open its link on this website.');
+ }catch(err){authMessage('Could not request recovery: '+err.message);}
+});
+$('resetForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const pass=$('newPassword').value;
+ if(pass.length<12 || pass!==$('confirmPassword').value){authMessage('Passwords must match and be at least 12 characters.');return;}
+ try{
+  const res=await fetch(SUPABASE_URL+'/auth/v1/user',{method:'PUT',headers:{'apikey':publishableKey,'Authorization':'Bearer '+recoveryAccessToken,'Content-Type':'application/json'},body:JSON.stringify({password:pass})});
+  const body=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(body.msg||body.message||body.error_description||'Password update failed');
+  $('newPassword').value='';$('confirmPassword').value='';
+  recoveryMode=false;recoveryAccessToken=null;$('resetForm').hidden=true;
+  session=null;cloudMode=false;localStorage.removeItem(SESSION_KEY);updateAuthUI();
+  $('authForm').hidden=false;authMessage('Password changed successfully. Sign in with your new password.');
+ }catch(err){authMessage('Password reset failed: '+err.message);}
+  });
+$('changePasswordBtn').addEventListener('click',()=>{
+  $('changePasswordForm').hidden=!$('changePasswordForm').hidden;
+  if(!$('changePasswordForm').hidden)$('accountNewPassword').focus();
+});
+$('cancelPassword').addEventListener('click',()=>{
+  $('changePasswordForm').reset();$('changePasswordForm').hidden=true;
+});
+$('changePasswordForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const password=$('accountNewPassword').value;
+  if(password.length<12||password!==$('accountConfirmPassword').value){authMessage('Passwords must match and be at least 12 characters.');return;}
+  try{
+    if(!session||!await ensureSession()){authMessage('Please sign in again.');return;}
+    await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({password})});
+    $('changePasswordForm').reset();$('changePasswordForm').hidden=true;
+    authMessage('Password changed successfully.');
+    showToast('Password updated.');
+  }catch(err){authMessage('Password change failed: '+err.message);}
+});
+$('subSearch').addEventListener('input',render);
+$('subFilter').addEventListener('change',render);
+
+function checkRecoveryLink(){
+ const hash=new URLSearchParams(location.hash.slice(1));
+ if(hash.get('type')!=='recovery'||!hash.get('access_token'))return false;
+ recoveryAccessToken=hash.get('access_token');recoveryMode=true;
+ if(!keySetup()){authMessage('To reset your password, reload and enter your Supabase publishable key (not your password).');return true;}
+ history.replaceState(null,'',location.pathname+location.search);
+ $('resetForm').hidden=false;$('authForm').hidden=true;
+ authMessage('Recovery link verified. Enter a new password below.');
+ return true;
+}
+
+$('signOutBtn').addEventListener('click',signOut);
+$('importBtn').addEventListener('click',async()=>{
+ if(!cloudMode||!localBackup.length)return;
+ const eligible=localBackup.filter(s=>['monthly','yearly'].includes(s.frequency)&&s.name&&s.price>0);
+ if(!eligible.length){authMessage('No monthly/yearly browser subscriptions to import. Weekly plans need a database upgrade.');return;}
+ if(!confirm('Import '+eligible.length+' subscriptions from this browser into your cloud account? Existing cloud subscriptions will be kept.'))return;
+ try{await ensureSession();const payload=eligible.map(s=>cloudRow({...s,id:crypto.randomUUID()}));await api('/rest/v1/subscriptions',{method:'POST',body:JSON.stringify(payload)});localBackup=[];await cloudLoad();showToast('Browser subscriptions imported.');}
+ catch(err){authMessage('Import failed: '+err.message);}
+});
+try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{session=null;}
+if(!checkRecoveryLink() && session&&publishableKey){localBackup=readLocal();cloudLoad().catch(e=>{authMessage('Could not load cloud data: '+e.message);signOut();});}
+$('exportBtn').addEventListener('click',()=>{const csv=['Name,Price,Frequency,Next payment,Category',...subscriptions.map(s=>[s.name,s.price,s.frequency,s.date,s.category].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='subzero-subscriptions.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('Backup CSV downloaded.');});
+render();
+</script>
+</body>
+</html>
