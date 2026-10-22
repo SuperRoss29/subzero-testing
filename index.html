@@ -295,7 +295,7 @@ $('subscriptionForm').addEventListener('submit',async e=>{
 let captchaWidgetId = null;
 function renderCaptcha(){
  if($('captchaPanel').hidden || captchaWidgetId !== null || !window.turnstile)return;
- captchaWidgetId = window.turnstile.render('#turnstileWidget',{sitekey:'0x4AAAAAAAFegmnCaLbU3MXZX',theme:'dark'});
+ captchaWidgetId = window.turnstile.render('#turnstileWidget',{sitekey:'1x00000000000000000000AA',theme:'dark'});
 }
 window.turnstileReady = renderCaptcha;
 $('authToggle').addEventListener('click',()=>{if(!keySetup())return;$('authForm').hidden=!$('authForm').hidden;$('captchaPanel').hidden=$('authForm').hidden;renderCaptcha();});
