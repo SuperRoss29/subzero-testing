@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SubZero — Subscription Control</title>
+<title>SubZero 2.0 — CAPTCHA Testing</title>
 <style>
 :root { color-scheme: light dark; --bg: light-dark(#f4f7fb,#090f1c); --panel: light-dark(#ffffff,#111b2b); --panel2: light-dark(#edf2f8,#172438); --text: light-dark(#132033,#f1f6ff); --muted: light-dark(#64748b,#94a8c4); --line: light-dark(#dce5f0,#25344b); --accent:#45d7e8; --accent2:#9b8cff; --good:#38d9a9; --danger:#ff718b; }
 * { box-sizing: border-box; }
@@ -151,6 +151,7 @@ body { background:radial-gradient(ellipse 80% 32% at 48% -9%,#193d5b 0%,transpar
     <section class="auth-panel" aria-label="Account and sync">
       <div class="auth-row"><div><b id="authTitle">Cloud sync (optional)</b><div class="auth-message" id="authStatus">Your existing subscriptions are saved in this browser. Sign in to sync across devices.</div></div><div class="auth-buttons"><button class="btn secondary" id="authToggle">Sign in / Sign up</button><button class="btn secondary" id="signOutBtn" hidden>Sign out</button><button class="btn secondary" id="changePasswordBtn" hidden>Change password</button><button class="btn secondary" id="importBtn" hidden>Import this browser's subscriptions</button></div></div>
       <form id="authForm" class="auth-form" hidden><input type="email" id="authEmail" autocomplete="email" placeholder="Email address" required><input type="password" id="authPassword" autocomplete="current-password" minlength="6" placeholder="Password (6+ characters)" required><button class="btn" type="submit" id="loginBtn">Sign in</button><button class="btn secondary" type="button" id="signupBtn">Create account</button><button class="text-btn" type="button" id="forgotBtn">Forgot password?</button></form>
+      <div id="captchaPanel" hidden style="margin-top:12px"><div id="turnstileWidget"></div><p class="auth-message">Complete the security check before signing in, creating an account, or requesting password recovery.</p></div>
       <form id="changePasswordForm" class="account-password" hidden><label for="accountNewPassword">Change your password (12 characters minimum)</label><input id="accountNewPassword" type="password" autocomplete="new-password" minlength="12" placeholder="New password" required><input id="accountConfirmPassword" type="password" autocomplete="new-password" minlength="12" placeholder="Confirm new password" required><button class="btn" type="submit">Save password</button><button class="btn secondary" id="cancelPassword" type="button">Cancel</button></form>
       <form id="resetForm" class="auth-form" hidden><input id="newPassword" type="password" autocomplete="new-password" minlength="12" placeholder="New password (12+ characters)" required><input id="confirmPassword" type="password" autocomplete="new-password" minlength="12" placeholder="Confirm new password" required><button class="btn" type="submit">Update password</button></form>
     </section>
@@ -177,18 +178,19 @@ body { background:radial-gradient(ellipse 80% 32% at 48% -9%,#193d5b 0%,transpar
   </main>
 </div>
 <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <form class="modal" id="subscriptionForm"><h3 id="modalTitle">Add a subscription</h3><p class="muted">Enter the basics. You can update them any time.</p>
+  <form class="modal" id="subscriptionForm" autocomplete="off"><h3 id="modalTitle">Add a subscription</h3><p class="muted">Enter the basics. You can update them any time.</p>
     <div class="form-grid">
-      <div class="field full"><label for="serviceName">Subscription name</label><input id="serviceName" name="serviceName" placeholder="e.g. Music streaming" required maxlength="60"></div>
-      <div class="field"><label for="price">Price (USD)</label><input id="price" name="price" type="number" min="0.01" step="0.01" placeholder="9.99" required></div>
-      <div class="field"><label for="frequency">Billing frequency</label><select id="frequency" name="frequency"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="weekly">Weekly (browser-only)</option></select></div>
-      <div class="field"><label for="nextDate">Next payment date</label><input id="nextDate" name="nextDate" type="date" required></div>
-      <div class="field"><label for="category">Category</label><select id="category" name="category"><option>Entertainment</option><option>Music</option><option>Gaming</option><option>Software</option><option>Fitness</option><option>Shopping</option><option>Other</option></select></div>
+      <div class="field full"><label for="serviceName">Subscription name</label><input id="serviceName" name="subscription_service_label" autocomplete="off" placeholder="e.g. Music streaming" required maxlength="60"></div>
+      <div class="field"><label for="price">Price (USD)</label><input id="price" name="subscription_amount" autocomplete="off" type="number" min="0.01" step="0.01" placeholder="9.99" required></div>
+      <div class="field"><label for="frequency">Billing frequency</label><select id="frequency" name="subscription_billing_cycle"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="weekly">Weekly (browser-only)</option></select></div>
+      <div class="field"><label for="nextDate">Next payment date</label><input id="nextDate" name="subscription_renewal_date" autocomplete="off" type="date" required></div>
+      <div class="field"><label for="category">Category</label><select id="category" name="subscription_category"><option>Entertainment</option><option>Music</option><option>Gaming</option><option>Software</option><option>Fitness</option><option>Shopping</option><option>Other</option></select></div>
     </div>
     <div class="modal-actions"><button type="button" class="btn secondary" id="cancelModal">Cancel</button><button type="submit" class="btn">Save subscription</button></div>
   </form>
 </div>
 <div class="toast" id="toast" role="status"></div>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer onload="window.turnstileReady?.()"></script>
 <script>
 const $ = id => document.getElementById(id);
 const KEY = 'subzero-subscriptions-v1';
@@ -290,21 +292,32 @@ $('subscriptionForm').addEventListener('submit',async e=>{
  try{if(cloudMode)await cloudSave(item);if(existing)subscriptions=subscriptions.map(s=>s.id===existing.id?item:s);else subscriptions.push(item);persist();render();closeModal();showToast(existing?'Subscription updated.':'Subscription saved.');}
  catch(err){showToast('Could not save: '+err.message);}
 });
-$('authToggle').addEventListener('click',()=>{if(!keySetup())return;$('authForm').hidden=!$('authForm').hidden;});
+let captchaWidgetId = null;
+function renderCaptcha(){
+ if($('captchaPanel').hidden || captchaWidgetId !== null || !window.turnstile)return;
+ captchaWidgetId = window.turnstile.render('#turnstileWidget',{sitekey:'0x4AAAAAAAFegmnCaLbU3MXZX',theme:'dark'});
+}
+window.turnstileReady = renderCaptcha;
+$('authToggle').addEventListener('click',()=>{if(!keySetup())return;$('authForm').hidden=!$('authForm').hidden;$('captchaPanel').hidden=$('authForm').hidden;renderCaptcha();});
+function captchaToken(){return captchaWidgetId === null ? '' : (window.turnstile?.getResponse?.(captchaWidgetId) || ''); }
+function resetCaptcha(){if(captchaWidgetId !== null)window.turnstile?.reset?.(captchaWidgetId);}
+function requireCaptcha(){const token=captchaToken();if(!token){authMessage('Please complete the CAPTCHA security check first.');return null;}return token;}
 async function authenticate(kind){
  if(!keySetup())return;
  const email=$('authEmail').value.trim(),password=$('authPassword').value;
  if(!email||password.length<6){authMessage('Enter an email and password of at least 6 characters.');return;}
+ const captcha_token=requireCaptcha();if(!captcha_token)return;
  try{
   if(kind==='signup'){
-   const data=await api('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password})});
+   const data=await api('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password,gotrue_meta_security:{captcha_token}})});
    if(!data.access_token){authMessage('Account requested. Check your email for a confirmation link, then return and sign in.');return;}
    session=data;
   }else{
-   session=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
+   session=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password,gotrue_meta_security:{captcha_token}})});
   }
   localStorage.setItem(SESSION_KEY,JSON.stringify(session));localBackup=readLocal();await cloudLoad();
  }catch(err){authMessage('Authentication failed: '+err.message);}
+ finally{resetCaptcha();}
 }
 $('authForm').addEventListener('submit',e=>{e.preventDefault();authenticate('signin');});
 $('signupBtn').addEventListener('click',()=>authenticate('signup'));
@@ -312,10 +325,12 @@ $('forgotBtn').addEventListener('click',async()=>{
  if(!keySetup())return;
  const email=$('authEmail').value.trim();
  if(!email){authMessage('Enter your email address first, then click Forgot password?');return;}
+ const captcha_token=requireCaptcha();if(!captcha_token)return;
  try{
-  await api('/auth/v1/recover',{method:'POST',body:JSON.stringify({email}),headers:{}});
+  await api('/auth/v1/recover',{method:'POST',body:JSON.stringify({email,gotrue_meta_security:{captcha_token}}),headers:{}});
   authMessage('If that email has an account, a recovery email will arrive. Open its link on this website.');
  }catch(err){authMessage('Could not request recovery: '+err.message);}
+ finally{resetCaptcha();}
 });
 $('resetForm').addEventListener('submit',async e=>{
  e.preventDefault();
