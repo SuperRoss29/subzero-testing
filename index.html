@@ -249,8 +249,39 @@ function render(){
  $('monthlyTotal').textContent=money(m);$('yearlyTotal').textContent=money(m*12).replace(/\.00$/,'');$('activeCount').textContent=subscriptions.length;
  const upcoming=[...subscriptions].sort((a,b)=>nextDate(a)-nextDate(b));
  $('upcomingNote').textContent=upcoming.length?`${upcoming.length} renewal${upcoming.length===1?'':'s'} tracked`:'Add your first subscription to begin';
- $('subList').innerHTML=subscriptions.length?subscriptions.map(s=>`<div class="sub-row"><div class="app-icon" style="color:${colors[s.category]||'var(--accent)'}">${icons[s.category]||'◈'}</div><div class="sub-info"><div class="sub-name">${escapeHTML(s.name)}</div><div class="sub-meta">${escapeHTML(s.category)} · Next: ${nextDate(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div><div class="sub-cost">${money(s.price)}<span>/${s.frequency==='yearly'?'year':s.frequency==='weekly'?'week':'month'}</span></div><button class="more" title="Edit ${escapeHTML(s.name)}" aria-label="Edit ${escapeHTML(s.name)}" data-edit="${escapeHTML(s.id)}">✎</button><button class="more" title="Remove ${escapeHTML(s.name)}" aria-label="Remove ${escapeHTML(s.name)}" data-remove="${escapeHTML(s.id)}">×</button></div>`).join(''):`<div class="empty"><b>${subscriptions.length?'No matching subscriptions':'No subscriptions yet'}</b>${subscriptions.length?'Try another search or category.':'Add your first recurring payment to see your monthly total here.'}<br><br>${subscriptions.length?'':'<button class="btn" id="emptyAdd">＋ Add subscription</button>'}</div>`;
+ const q=$('searchSubs').value.trim().toLowerCase();
+ const category=$('categoryFilter').value;
+ const visible=subscriptions.filter(s=>(category==='all'||s.category===category)&&(!q||s.name.toLowerCase().includes(q)||s.category.toLowerCase().includes(q)));
+ const sort=$('sortSubs').value;
+ visible.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name):sort==='cost'?monthly(b)-monthly(a):nextDate(a)-nextDate(b));
+ $('subList').innerHTML=visible.length?visible.map(s=>`<div class="sub-row"><div class="app-icon" style="color:${colors[s.category]||'var(--accent)'}">${icons[s.category]||'◈'}</div><div class="sub-info"><div class="sub-name">${escapeHTML(s.name)}</div><div class="sub-meta">${escapeHTML(s.category)} · Next: ${nextDate(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div><div class="sub-cost">${money(s.price)}<span>/${s.frequency==='yearly'?'year':s.frequency==='weekly'?'week':'month'}</span></div><button class="more" title="Edit ${escapeHTML(s.name)}" aria-label="Edit ${escapeHTML(s.name)}" data-edit="${escapeHTML(s.id)}">✎</button><button class="more" title="Remove ${escapeHTML(s.name)}" aria-label="Remove ${escapeHTML(s.name)}" data-remove="${escapeHTML(s.id)}">×</button></div>`).join(''):`<div class="empty"><b>${subscriptions.length?'No matching subscriptions':'No subscriptions yet'}</b>${subscriptions.length?'Try another search or category.':'Add your first recurring payment to see your monthly total here.'}<br><br>${subscriptions.length?'':'<button class="btn" id="emptyAdd">＋ Add subscription</button>'}</div>`;
  $('renewalList').innerHTML=upcoming.length?upcoming.slice(0,3).map(s=>{const p=dateParts(nextDate(s));return `<div class="renewal"><div class="datebox"><b>${p.day}</b><span>${p.month}</span></div><div class="renewal-info"><b>${escapeHTML(s.name)}</b><span>${escapeHTML(s.category)}</span></div><strong>${money(s.price)}</strong></div>`}).join(''):`<div class="renewal"><p style="color:#a9bfd4;font-size:12px">Your upcoming payments will appear here.</p></div>`;
+ function expectedPayments(days){
+  const today=dateObj(futureDate(0)),end=dateObj(futureDate(days-1));
+  let total=0,count=0;
+  for(const sub of subscriptions){
+   let d=nextDate(sub),i=0;
+   while(d<=end && i++<150){
+    if(d>=today){total+=sub.price;count++;}
+    if(sub.frequency==='weekly')d.setDate(d.getDate()+7);
+    else {const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+(sub.frequency==='yearly'?12:1));d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));}
+   }
+  }
+  return {total,count};
+ }
+ const seven=expectedPayments(7),thirty=expectedPayments(30);
+ $('next7Total').textContent=money(seven.total);
+ $('next7Detail').textContent=seven.count+' expected payment'+(seven.count===1?'':'s');
+ $('next30Total').textContent=money(thirty.total);
+ $('next30Detail').textContent=thirty.count+' expected payment'+(thirty.count===1?'':'s');
+ const largest=[...subscriptions].sort((a,b)=>monthly(b)-monthly(a))[0];
+ $('largestCost').textContent=largest?money(monthly(largest)):money(0);
+ $('largestDetail').textContent=largest?largest.name+' · monthly equivalent':'No subscriptions yet';
+ const byCategory={};
+ for(const sub of subscriptions)byCategory[sub.category]=(byCategory[sub.category]||0)+monthly(sub);
+ const ranked=Object.entries(byCategory).sort((a,b)=>b[1]-a[1]);
+ const max=ranked[0]?.[1]||1;
+ $('categoryBreakdown').innerHTML=ranked.length?ranked.map(([name,value])=>`<div class="category-line"><span class="category-name">${escapeHTML(name)}</span><div class="category-track"><div class="category-fill" style="width:${Math.max(2,100*value/max)}%;background:${colors[name]||'var(--accent)'}"></div></div><span class="category-amount">${money(value)}</span></div>`).join(''):'<p class="auth-message">Add subscriptions to see your spending breakdown.</p>';
  if($('emptyAdd'))$('emptyAdd').addEventListener('click',()=>openModal());
  document.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.edit)));
  document.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',async()=>{const s=subscriptions.find(x=>String(x.id)===b.dataset.remove);if(!s||!confirm(`Remove ${s.name}?`))return;try{if(cloudMode)await cloudDelete(s.id);subscriptions=subscriptions.filter(x=>x.id!==s.id);persist();render();showToast('Subscription removed.');}catch(e){showToast('Delete failed: '+e.message);}}));
