@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SubZero 2.0 — CAPTCHA Testing</title>
+<title>SubZero — Subscription Control</title>
 <style>
 :root { color-scheme: light dark; --bg: light-dark(#f4f7fb,#090f1c); --panel: light-dark(#ffffff,#111b2b); --panel2: light-dark(#edf2f8,#172438); --text: light-dark(#132033,#f1f6ff); --muted: light-dark(#64748b,#94a8c4); --line: light-dark(#dce5f0,#25344b); --accent:#45d7e8; --accent2:#9b8cff; --good:#38d9a9; --danger:#ff718b; }
 * { box-sizing: border-box; }
@@ -93,53 +93,26 @@ h2 { margin:8px 0 7px; font-size:clamp(27px,4vw,39px); line-height:1.08; letter-
 @media(max-width:800px) { .app { padding:17px; } .content-grid { grid-template-columns:1fr; } .side-stack { display:grid; grid-template-columns:1fr 1fr; } }
 @media(max-width:560px) { .topbar { align-items:flex-start; } .pill { display:none; } .hero { align-items:flex-start; flex-direction:column; } .stats { grid-template-columns:1fr 1fr; } .stat:last-child { grid-column:1/-1; } .side-stack { display:flex; } .form-grid { grid-template-columns:1fr; } .field.full { grid-column:auto; } .sub-row { gap:8px; } .sub-cost { font-size:12px; } }
 
-/* SubZero 2.0 — responsive dashboard refinement */
-:root { color-scheme:dark; --bg:#070e1b;--panel:#111d30;--panel2:#192a41;--text:#edf7ff;--muted:#9aafc9;--line:#263950;--accent:#52e0ee; }
-body { background:radial-gradient(ellipse 80% 32% at 48% -9%,#193d5b 0%,transparent 80%),var(--bg); }
-.app { background:transparent; }
-.shell { max-width:1220px; }
-.topbar { padding:10px 0 19px;border-bottom:1px solid var(--line);margin-bottom:26px; }
-.logo { background:linear-gradient(140deg,#6df0ee,#78a9ff);box-shadow:0 8px 34px #4ce0ef27; }
-.brand h1 { font-size:25px; }
-.auth-panel,.stat,.panel { box-shadow:0 12px 40px #00000017; }
-.auth-panel { border-radius:20px; }
-.hero { padding:24px 2px 8px; }
-.hero h2 { font-size:clamp(33px,5vw,53px);line-height:1.07;letter-spacing:-2px; }
-.eyebrow { letter-spacing:2.4px; }
-.stat { position:relative;overflow:hidden;transition:transform .18s ease,border-color .18s ease; }
-.stat:hover { transform:translateY(-2px);border-color:#365772; }
-.stat:first-child:after { content:'';position:absolute;width:160px;height:160px;border-radius:50%;right:-75px;bottom:-110px;background:#45d7e811;pointer-events:none; }
-.stat-value { font-variant-numeric:tabular-nums; }
-.btn { transition:transform .15s ease,filter .15s ease; }
-.btn:active { transform:translateY(0); }
-.btn:focus-visible,.more:focus-visible,.text-btn:focus-visible,input:focus-visible,select:focus-visible { outline:2px solid var(--accent);outline-offset:3px; }
-.panel { border-radius:22px; }
-.sub-row { transition:background .15s ease;border-radius:12px; }
-.sub-row:hover { background:#ffffff08; }
-.sub-name { font-size:14px; }
-.sub-meta { font-size:12px; }
-.next-card { background:linear-gradient(135deg,#163d52,#17223f 78%); }
-.list-tools { display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:0 20px 15px; }
-.list-tools input,.list-tools select { min-width:0;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:11px;padding:11px 12px; }
-.list-tools input { flex:1;min-width:140px; }
-.list-tools select { max-width:165px; }
-.list-tools input:focus,.list-tools select:focus { border-color:var(--accent);outline:none; }
-.sub-list { min-height:85px; }
-.account-password { display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:13px; }
-.account-password input { flex:1;min-width:180px;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text); }
-.account-password label { font-size:12px;color:var(--muted);width:100%; }
-.account-password .btn { white-space:nowrap; }
-@media(max-width:560px) {
- .app { padding:14px; }.topbar { gap:12px; }.top-actions .btn { padding:10px 11px;font-size:12px; }
- .brand h1 { font-size:21px; }.brand p { font-size:9px; }.logo { width:39px;height:39px; }
- .hero { padding-top:8px; }.hero h2 { font-size:37px; }.stats { gap:9px; }.stat { padding:16px; }
- .stat-value { font-size:25px; }.stat-note { line-height:1.45; }
- .panel-head { padding:17px 15px 12px; }.list-tools { padding:0 14px 13px; }
- .sub-list { padding:0 7px 10px; }.sub-row { gap:7px;padding:12px 6px; }.app-icon { width:36px;height:36px;border-radius:11px; }
- .sub-cost { font-size:11px; }.more { padding:6px 7px;margin-left:0; }.auth-panel { padding:15px; }
-}
-@media(prefers-reduced-motion:reduce) { *,*:before,*:after { transition:none!important;scroll-behavior:auto!important; } }
+/* SubZero 1.0 dashboard improvements */
+.dashboard-tools { display:flex; gap:10px; flex-wrap:wrap; padding:0 20px 16px; }
+.dashboard-tools input,.dashboard-tools select { background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:11px;padding:11px 12px;min-width:0; }
+.dashboard-tools input { flex:1 1 180px; }
+.dashboard-tools select { flex:0 1 165px; }
+.insight-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 20px; }
+.insight { padding:16px 19px;border:1px solid var(--line);border-radius:17px;background:var(--panel); }
+.insight-label { color:var(--muted);font-size:11px;margin-bottom:9px; }
+.insight-value { font-size:19px;font-weight:800;letter-spacing:-.5px;overflow-wrap:anywhere; }
+.insight-detail { font-size:11px;color:var(--muted);margin-top:6px; }
+.section-heading { font-size:15px;margin:0 0 12px; }
+.category-panel { padding:20px;margin-top:16px; }
+.category-line { display:flex;align-items:center;gap:12px;margin-top:12px; }
+.category-name { width:100px;min-width:0;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.category-track { flex:1;height:9px;background:var(--panel2);border-radius:20px;overflow:hidden; }
+.category-fill { height:100%;background:var(--accent);border-radius:20px; }
+.category-amount { width:75px;text-align:right;font-size:12px;font-weight:700; }
+@media(max-width:650px) { .insight-grid { grid-template-columns:1fr;gap:9px; } .dashboard-tools { padding:0 14px 14px; } }
 </style>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=subzeroTurnstileLoaded" async defer></script>
 </head>
 <body>
 <div class="app" id="appRoot">
@@ -152,7 +125,6 @@ body { background:radial-gradient(ellipse 80% 32% at 48% -9%,#193d5b 0%,transpar
       <div class="auth-row"><div><b id="authTitle">Cloud sync (optional)</b><div class="auth-message" id="authStatus">Your existing subscriptions are saved in this browser. Sign in to sync across devices.</div></div><div class="auth-buttons"><button class="btn secondary" id="authToggle">Sign in / Sign up</button><button class="btn secondary" id="signOutBtn" hidden>Sign out</button><button class="btn secondary" id="changePasswordBtn" hidden>Change password</button><button class="btn secondary" id="importBtn" hidden>Import this browser's subscriptions</button></div></div>
       <form id="authForm" class="auth-form" hidden><input type="email" id="authEmail" autocomplete="email" placeholder="Email address" required><input type="password" id="authPassword" autocomplete="current-password" minlength="6" placeholder="Password (6+ characters)" required><button class="btn" type="submit" id="loginBtn">Sign in</button><button class="btn secondary" type="button" id="signupBtn">Create account</button><button class="text-btn" type="button" id="forgotBtn">Forgot password?</button></form>
       <div id="captchaPanel" hidden style="margin-top:12px"><div id="turnstileWidget"></div><p class="auth-message">Complete the security check before signing in, creating an account, or requesting password recovery.</p></div>
-      <form id="changePasswordForm" class="account-password" hidden><label for="accountNewPassword">Change your password (12 characters minimum)</label><input id="accountNewPassword" type="password" autocomplete="new-password" minlength="12" placeholder="New password" required><input id="accountConfirmPassword" type="password" autocomplete="new-password" minlength="12" placeholder="Confirm new password" required><button class="btn" type="submit">Save password</button><button class="btn secondary" id="cancelPassword" type="button">Cancel</button></form>
       <form id="resetForm" class="auth-form" hidden><input id="newPassword" type="password" autocomplete="new-password" minlength="12" placeholder="New password (12+ characters)" required><input id="confirmPassword" type="password" autocomplete="new-password" minlength="12" placeholder="Confirm new password" required><button class="btn" type="submit">Update password</button></form>
     </section>
     <section class="hero">
@@ -164,13 +136,20 @@ body { background:radial-gradient(ellipse 80% 32% at 48% -9%,#193d5b 0%,transpar
       <article class="stat"><div class="stat-top"><span>Yearly estimate</span><span class="stat-icon">◷</span></div><div class="stat-value" id="yearlyTotal">$0</div><div class="stat-note">If your subscriptions stay unchanged</div></article>
       <article class="stat"><div class="stat-top"><span>Active subscriptions</span><span class="stat-icon">▤</span></div><div class="stat-value" id="activeCount">0</div><div class="stat-note" id="upcomingNote">Add your first subscription to begin</div></article>
     </section>
+    <section class="insight-grid" aria-label="Spending insights">
+      <article class="insight"><div class="insight-label">Next 7 days</div><div class="insight-value" id="next7Total">$0.00</div><div class="insight-detail" id="next7Detail">No upcoming payments</div></article>
+      <article class="insight"><div class="insight-label">Next 30 days</div><div class="insight-value" id="next30Total">$0.00</div><div class="insight-detail" id="next30Detail">Based on scheduled renewals</div></article>
+      <article class="insight"><div class="insight-label">Largest monthly cost</div><div class="insight-value" id="largestCost">$0.00</div><div class="insight-detail" id="largestDetail">No subscriptions yet</div></article>
+    </section>
     <section class="content-grid">
       <article class="panel">
         <div class="panel-head"><div><h3>Your subscriptions</h3><p>Keep all your recurring payments in one view.</p></div><button class="text-btn" id="addInline">＋ Add new</button></div>
-        <div class="list-tools"><input id="subSearch" type="search" placeholder="Search subscriptions…" aria-label="Search subscriptions"><select id="subFilter" aria-label="Filter by category"><option value="all">All categories</option><option>Entertainment</option><option>Music</option><option>Gaming</option><option>Software</option><option>Fitness</option><option>Shopping</option><option>Other</option></select></div><div class="sub-list" id="subList"></div>
+        <div class="dashboard-tools"><input id="searchSubs" type="search" aria-label="Search subscriptions" placeholder="Search subscriptions..."><select id="categoryFilter" aria-label="Filter by category"><option value="all">All categories</option><option>Entertainment</option><option>Music</option><option>Gaming</option><option>Software</option><option>Fitness</option><option>Shopping</option><option>Other</option></select><select id="sortSubs" aria-label="Sort subscriptions"><option value="renewal">Next renewal</option><option value="name">Name (A–Z)</option><option value="cost">Highest monthly cost</option></select></div>
+        <div class="sub-list" id="subList"></div>
       </article>
       <aside class="side-stack">
         <section class="next-card"><div class="eyebrow">Coming up</div><h3>Renewals at a glance</h3><p>Your next expected payments, all in one place.</p><div id="renewalList"></div></section>
+        <section class="panel category-panel"><h3 class="section-heading">Spending by category</h3><div id="categoryBreakdown" aria-label="Monthly cost by category"></div></section>
         <section class="panel tips"><h3>Make SubZero work for you</h3><div class="tip"><span class="tip-symbol">✧</span><div><b>Start with the small charges</b><p>Forgotten subscriptions can be easy to overlook. Add the ones you use and review the rest.</p></div></div><div class="tip"><span class="tip-symbol">◷</span><div><b>Check dates before renewal</b><p>Use the next-payment date to plan ahead. SubZero shows renewal dates but does not send automatic notifications.</p></div></div><div class="tip"><span class="tip-symbol">⌁</span><div><b>Saved on this device</b><p>Subscriptions are saved in this browser unless you sign in for cloud sync. Export a CSV backup regularly.</p></div></div></section>
       </aside>
     </section>
@@ -178,19 +157,18 @@ body { background:radial-gradient(ellipse 80% 32% at 48% -9%,#193d5b 0%,transpar
   </main>
 </div>
 <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <form class="modal" id="subscriptionForm" autocomplete="off"><h3 id="modalTitle">Add a subscription</h3><p class="muted">Enter the basics. You can update them any time.</p>
+  <form class="modal" id="subscriptionForm"><h3 id="modalTitle">Add a subscription</h3><p class="muted">Enter the basics. You can update them any time.</p>
     <div class="form-grid">
-      <div class="field full"><label for="serviceName">Subscription name</label><input id="serviceName" name="subscription_service_label" autocomplete="off" placeholder="e.g. Music streaming" required maxlength="60"></div>
-      <div class="field"><label for="price">Price (USD)</label><input id="price" name="subscription_amount" autocomplete="off" type="number" min="0.01" step="0.01" placeholder="9.99" required></div>
-      <div class="field"><label for="frequency">Billing frequency</label><select id="frequency" name="subscription_billing_cycle"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="weekly">Weekly (browser-only)</option></select></div>
-      <div class="field"><label for="nextDate">Next payment date</label><input id="nextDate" name="subscription_renewal_date" autocomplete="off" type="date" required></div>
-      <div class="field"><label for="category">Category</label><select id="category" name="subscription_category"><option>Entertainment</option><option>Music</option><option>Gaming</option><option>Software</option><option>Fitness</option><option>Shopping</option><option>Other</option></select></div>
+      <div class="field full"><label for="serviceName">Subscription name</label><input id="serviceName" name="serviceName" placeholder="e.g. Music streaming" required maxlength="60"></div>
+      <div class="field"><label for="price">Price (USD)</label><input id="price" name="price" type="number" min="0.01" step="0.01" placeholder="9.99" required></div>
+      <div class="field"><label for="frequency">Billing frequency</label><select id="frequency" name="frequency"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="weekly">Weekly (browser-only)</option></select></div>
+      <div class="field"><label for="nextDate">Next payment date</label><input id="nextDate" name="nextDate" type="date" required></div>
+      <div class="field"><label for="category">Category</label><select id="category" name="category"><option>Entertainment</option><option>Music</option><option>Gaming</option><option>Software</option><option>Fitness</option><option>Shopping</option><option>Other</option></select></div>
     </div>
     <div class="modal-actions"><button type="button" class="btn secondary" id="cancelModal">Cancel</button><button type="submit" class="btn">Save subscription</button></div>
   </form>
 </div>
 <div class="toast" id="toast" role="status"></div>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer onload="window.turnstileReady?.()"></script>
 <script>
 const $ = id => document.getElementById(id);
 const KEY = 'subzero-subscriptions-v1';
@@ -234,8 +212,8 @@ async function cloudLoad(){
 function updateAuthUI(){
  $('authTitle').textContent=cloudMode?'Cloud sync enabled':'Cloud sync (optional)';
  $('signOutBtn').hidden=!cloudMode;$('authToggle').hidden=cloudMode;if(!recoveryMode)$('authForm').hidden=true;$('changePasswordBtn').hidden=!cloudMode;
+ $('captchaPanel').hidden=$('authForm').hidden; if(!$('captchaPanel').hidden)renderCaptcha();
  $('importBtn').hidden=!cloudMode||!localBackup.length;
-  if(!cloudMode)$('changePasswordForm').hidden=true;
 }
 async function signOut(){
  session=null;cloudMode=false;localStorage.removeItem(SESSION_KEY);
@@ -271,9 +249,7 @@ function render(){
  $('monthlyTotal').textContent=money(m);$('yearlyTotal').textContent=money(m*12).replace(/\.00$/,'');$('activeCount').textContent=subscriptions.length;
  const upcoming=[...subscriptions].sort((a,b)=>nextDate(a)-nextDate(b));
  $('upcomingNote').textContent=upcoming.length?`${upcoming.length} renewal${upcoming.length===1?'':'s'} tracked`:'Add your first subscription to begin';
- const term=$('subSearch').value.trim().toLocaleLowerCase();const category=$('subFilter').value;
- const visible=subscriptions.filter(s=>(category==='all'||s.category===category)&&s.name.toLocaleLowerCase().includes(term));
- $('subList').innerHTML=visible.length?visible.map(s=>`<div class="sub-row"><div class="app-icon" style="color:${colors[s.category]||'var(--accent)'}">${icons[s.category]||'◈'}</div><div class="sub-info"><div class="sub-name">${escapeHTML(s.name)}</div><div class="sub-meta">${escapeHTML(s.category)} · Next: ${nextDate(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div><div class="sub-cost">${money(s.price)}<span>/${s.frequency==='yearly'?'year':s.frequency==='weekly'?'week':'month'}</span></div><button class="more" title="Edit ${escapeHTML(s.name)}" aria-label="Edit ${escapeHTML(s.name)}" data-edit="${escapeHTML(s.id)}">✎</button><button class="more" title="Remove ${escapeHTML(s.name)}" aria-label="Remove ${escapeHTML(s.name)}" data-remove="${escapeHTML(s.id)}">×</button></div>`).join(''):`<div class="empty"><b>${subscriptions.length?'No matching subscriptions':'No subscriptions yet'}</b>${subscriptions.length?'Try another search or category.':'Add your first recurring payment to see your monthly total here.<br><br><button class="btn" id="emptyAdd">＋ Add subscription</button>'}</div>`;
+ $('subList').innerHTML=subscriptions.length?subscriptions.map(s=>`<div class="sub-row"><div class="app-icon" style="color:${colors[s.category]||'var(--accent)'}">${icons[s.category]||'◈'}</div><div class="sub-info"><div class="sub-name">${escapeHTML(s.name)}</div><div class="sub-meta">${escapeHTML(s.category)} · Next: ${nextDate(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div><div class="sub-cost">${money(s.price)}<span>/${s.frequency==='yearly'?'year':s.frequency==='weekly'?'week':'month'}</span></div><button class="more" title="Edit ${escapeHTML(s.name)}" aria-label="Edit ${escapeHTML(s.name)}" data-edit="${escapeHTML(s.id)}">✎</button><button class="more" title="Remove ${escapeHTML(s.name)}" aria-label="Remove ${escapeHTML(s.name)}" data-remove="${escapeHTML(s.id)}">×</button></div>`).join(''):`<div class="empty"><b>${subscriptions.length?'No matching subscriptions':'No subscriptions yet'}</b>${subscriptions.length?'Try another search or category.':'Add your first recurring payment to see your monthly total here.'}<br><br>${subscriptions.length?'':'<button class="btn" id="emptyAdd">＋ Add subscription</button>'}</div>`;
  $('renewalList').innerHTML=upcoming.length?upcoming.slice(0,3).map(s=>{const p=dateParts(nextDate(s));return `<div class="renewal"><div class="datebox"><b>${p.day}</b><span>${p.month}</span></div><div class="renewal-info"><b>${escapeHTML(s.name)}</b><span>${escapeHTML(s.category)}</span></div><strong>${money(s.price)}</strong></div>`}).join(''):`<div class="renewal"><p style="color:#a9bfd4;font-size:12px">Your upcoming payments will appear here.</p></div>`;
  if($('emptyAdd'))$('emptyAdd').addEventListener('click',()=>openModal());
  document.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>openModal(b.dataset.edit)));
@@ -281,6 +257,7 @@ function render(){
 }
 function openModal(id=null){editingId=id;$('subscriptionForm').reset();const s=subscriptions.find(x=>String(x.id)===String(id));$('modalTitle').textContent=s?'Edit subscription':'Add a subscription';$('serviceName').value=s?.name||'';$('price').value=s?.price||'';$('frequency').value=s?.frequency||'monthly';$('nextDate').value=s?.date||futureDate(7);$('category').value=s?.category||'Entertainment';$('modalBackdrop').classList.add('open');$('serviceName').focus();}
 function closeModal(){$('modalBackdrop').classList.remove('open');editingId=null;}
+['searchSubs','categoryFilter','sortSubs'].forEach(id=>$(id).addEventListener(id==='searchSubs'?'input':'change',render));
 $('addTop').addEventListener('click',()=>openModal());$('addInline').addEventListener('click',()=>openModal());$('cancelModal').addEventListener('click',closeModal);
 $('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 $('subscriptionForm').addEventListener('submit',async e=>{
@@ -292,16 +269,33 @@ $('subscriptionForm').addEventListener('submit',async e=>{
  try{if(cloudMode)await cloudSave(item);if(existing)subscriptions=subscriptions.map(s=>s.id===existing.id?item:s);else subscriptions.push(item);persist();render();closeModal();showToast(existing?'Subscription updated.':'Subscription saved.');}
  catch(err){showToast('Could not save: '+err.message);}
 });
+// Cloudflare Turnstile uses a public site key; the secret stays in Supabase.
+const TURNSTILE_SITE_KEY = '0x4AAAAAAFegmnCaLbU3MXZX';
 let captchaWidgetId = null;
 function renderCaptcha(){
  if($('captchaPanel').hidden || captchaWidgetId !== null || !window.turnstile)return;
- captchaWidgetId = window.turnstile.render('#turnstileWidget',{sitekey:'0x4AAAAAAFegmnCaLbU3MXZX',theme:'dark'});
+ try {
+  captchaWidgetId=window.turnstile.render('#turnstileWidget',{
+   sitekey:TURNSTILE_SITE_KEY,theme:'dark',
+   'error-callback':()=>authMessage('CAPTCHA could not load. Refresh the page and try again.'),
+   'expired-callback':()=>authMessage('CAPTCHA expired. Please complete the security check again.')
+  });
+ }catch(err){authMessage('CAPTCHA could not load. Please refresh and try again.');}
 }
-window.turnstileReady = renderCaptcha;
-$('authToggle').addEventListener('click',()=>{if(!keySetup())return;$('authForm').hidden=!$('authForm').hidden;$('captchaPanel').hidden=$('authForm').hidden;renderCaptcha();});
-function captchaToken(){return captchaWidgetId === null ? '' : (window.turnstile?.getResponse?.(captchaWidgetId) || ''); }
-function resetCaptcha(){if(captchaWidgetId !== null)window.turnstile?.reset?.(captchaWidgetId);}
-function requireCaptcha(){const token=captchaToken();if(!token){authMessage('Please complete the CAPTCHA security check first.');return null;}return token;}
+window.subzeroTurnstileLoaded=renderCaptcha;
+function captchaToken(){return captchaWidgetId===null?'':(window.turnstile?.getResponse?.(captchaWidgetId)||'');}
+function resetCaptcha(){if(captchaWidgetId!==null && window.turnstile)window.turnstile.reset(captchaWidgetId);}
+function requireCaptcha(){
+ const token=captchaToken();
+ if(!token){authMessage('Please complete the CAPTCHA security check first.');return null;}
+ return token;
+}
+$('authToggle').addEventListener('click',()=>{
+ if(!keySetup())return;
+ $('authForm').hidden=!$('authForm').hidden;
+ $('captchaPanel').hidden=$('authForm').hidden;
+ renderCaptcha();
+});
 async function authenticate(kind){
  if(!keySetup())return;
  const email=$('authEmail').value.trim(),password=$('authPassword').value;
@@ -327,7 +321,7 @@ $('forgotBtn').addEventListener('click',async()=>{
  if(!email){authMessage('Enter your email address first, then click Forgot password?');return;}
  const captcha_token=requireCaptcha();if(!captcha_token)return;
  try{
-  await api('/auth/v1/recover',{method:'POST',body:JSON.stringify({email,gotrue_meta_security:{captcha_token}}),headers:{}});
+  await api('/auth/v1/recover',{method:'POST',body:JSON.stringify({email,gotrue_meta_security:{captcha_token}})});
   authMessage('If that email has an account, a recovery email will arrive. Open its link on this website.');
  }catch(err){authMessage('Could not request recovery: '+err.message);}
  finally{resetCaptcha();}
@@ -343,31 +337,34 @@ $('resetForm').addEventListener('submit',async e=>{
   $('newPassword').value='';$('confirmPassword').value='';
   recoveryMode=false;recoveryAccessToken=null;$('resetForm').hidden=true;
   session=null;cloudMode=false;localStorage.removeItem(SESSION_KEY);updateAuthUI();
-  $('authForm').hidden=false;authMessage('Password changed successfully. Sign in with your new password.');
+  $('authForm').hidden=false;$('captchaPanel').hidden=false;renderCaptcha();authMessage('Password changed successfully. Sign in with your new password.');
  }catch(err){authMessage('Password reset failed: '+err.message);}
   });
-$('changePasswordBtn').addEventListener('click',()=>{
-  $('changePasswordForm').hidden=!$('changePasswordForm').hidden;
-  if(!$('changePasswordForm').hidden)$('accountNewPassword').focus();
-});
-$('cancelPassword').addEventListener('click',()=>{
-  $('changePasswordForm').reset();$('changePasswordForm').hidden=true;
-});
-$('changePasswordForm').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const password=$('accountNewPassword').value;
-  if(password.length<12||password!==$('accountConfirmPassword').value){authMessage('Passwords must match and be at least 12 characters.');return;}
-  try{
-    if(!session||!await ensureSession()){authMessage('Please sign in again.');return;}
-    await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({password})});
-    $('changePasswordForm').reset();$('changePasswordForm').hidden=true;
-    authMessage('Password changed successfully.');
-    showToast('Password updated.');
-  }catch(err){authMessage('Password change failed: '+err.message);}
-});
-$('subSearch').addEventListener('input',render);
-$('subFilter').addEventListener('change',render);
+$('changePasswordBtn').addEventListener('click', async () => {
+  if (!session || !await ensureSession()) {
+    authMessage('Please sign in again.');
+    return;
+  }
 
+  const password = prompt('Enter your new password (at least 12 characters):');
+  if (password === null) return;
+  if (password.length < 12) {
+    authMessage('Password must be at least 12 characters.');
+    return;
+  }
+
+  try {
+    await api('/auth/v1/user', {
+      method: 'PUT',
+      body: JSON.stringify({ password })
+    });
+    authMessage('Password changed successfully!');
+  } catch (err) {
+    authMessage('Password change failed: ' + err.message);
+  }
+});
+
+  
 function checkRecoveryLink(){
  const hash=new URLSearchParams(location.hash.slice(1));
  if(hash.get('type')!=='recovery'||!hash.get('access_token'))return false;
