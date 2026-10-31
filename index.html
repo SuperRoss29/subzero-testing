@@ -111,6 +111,23 @@ h2 { margin:8px 0 7px; font-size:clamp(27px,4vw,39px); line-height:1.08; letter-
 .category-fill { height:100%;background:var(--accent);border-radius:20px; }
 .category-amount { width:75px;text-align:right;font-size:12px;font-weight:700; }
 @media(max-width:650px) { .insight-grid { grid-template-columns:1fr;gap:9px; } .dashboard-tools { padding:0 14px 14px; } }
+
+.reminder-panel { margin:0 0 20px;padding:20px;border:1px solid var(--line);border-radius:20px;background:var(--panel); }
+.reminder-heading {display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.reminder-heading h3 {margin:0;font-size:17px}
+.reminder-heading p {margin:5px 0 0;font-size:12px;color:var(--muted)}
+.reminder-filters {display:flex;flex-wrap:wrap;gap:7px}
+.reminder-filter {padding:8px 11px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:12px}
+.reminder-filter[aria-pressed="true"] {border-color:var(--accent);color:var(--accent);font-weight:750}
+.reminder-list {display:grid;gap:8px}
+.reminder-item {display:flex;align-items:center;gap:12px;background:var(--panel2);padding:12px;border-radius:12px}
+.reminder-item .reminder-dot {width:9px;height:9px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.reminder-item.urgent .reminder-dot {background:var(--danger)}
+.reminder-item .reminder-copy {flex:1;min-width:0}
+.reminder-item b {font-size:13px;overflow-wrap:anywhere}
+.reminder-item p {margin:4px 0 0;color:var(--muted);font-size:11px}
+.reminder-item strong {font-size:13px;white-space:nowrap}
+.reminder-empty {color:var(--muted);font-size:12px;margin:4px 0}
 </style>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=subzeroTurnstileLoaded" async defer></script>
 </head>
@@ -140,6 +157,16 @@ h2 { margin:8px 0 7px; font-size:clamp(27px,4vw,39px); line-height:1.08; letter-
       <article class="insight"><div class="insight-label">Next 7 days</div><div class="insight-value" id="next7Total">$0.00</div><div class="insight-detail" id="next7Detail">No upcoming payments</div></article>
       <article class="insight"><div class="insight-label">Next 30 days</div><div class="insight-value" id="next30Total">$0.00</div><div class="insight-detail" id="next30Detail">Based on scheduled renewals</div></article>
       <article class="insight"><div class="insight-label">Largest monthly cost</div><div class="insight-value" id="largestCost">$0.00</div><div class="insight-detail" id="largestDetail">No subscriptions yet</div></article>
+    </section>
+    <section class="reminder-panel" aria-label="Subscription reminders">
+      <div class="reminder-heading"><div><h3>🔔 Renewal reminders <span id="reminderCount" class="auth-message"></span></h3><p>Upcoming payments while you have SubZero open. No push notifications yet.</p></div>
+        <div class="reminder-filters" role="group" aria-label="Reminder window">
+          <button class="reminder-filter" type="button" data-reminder-days="1" aria-pressed="false">1 day</button>
+          <button class="reminder-filter" type="button" data-reminder-days="3" aria-pressed="false">3 days</button>
+          <button class="reminder-filter" type="button" data-reminder-days="7" aria-pressed="true">7 days</button>
+        </div>
+      </div>
+      <div id="reminderList" class="reminder-list" aria-live="polite"></div>
     </section>
     <section class="content-grid">
       <article class="panel">
@@ -244,7 +271,30 @@ function nextDate(s){let d=dateObj(s.date);const today=dateObj(futureDate(0));if
 function dateParts(d){return {day:d.getDate(),month:d.toLocaleDateString('en-US',{month:'short'})}}
 function escapeHTML(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function showToast(message){const t=$('toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+let reminderWindowDays=7;
+function renderReminders(){
+ const today=dateObj(futureDate(0));
+ const upcomingReminders=subscriptions.map(sub=>{
+  const renewal=nextDate(sub);
+  const days=Math.round((renewal-today)/86400000);
+  return {sub,renewal,days};
+ }).filter(item=>item.days>=0 && item.days<=reminderWindowDays)
+ .sort((a,b)=>a.days-b.days || a.sub.name.localeCompare(b.sub.name));
+ $('reminderCount').textContent='('+upcomingReminders.length+')';
+ document.querySelectorAll('[data-reminder-days]').forEach(button=>{
+  button.setAttribute('aria-pressed',String(Number(button.dataset.reminderDays)===reminderWindowDays));
+ });
+ $('reminderList').innerHTML=upcomingReminders.length?upcomingReminders.map(({sub,renewal,days})=>{
+  const due=days===0?'Due today':days===1?'Due tomorrow':'Due in '+days+' days';
+  return `<div class="reminder-item ${days<=1?'urgent':''}"><span class="reminder-dot" aria-hidden="true"></span><div class="reminder-copy"><b>${escapeHTML(sub.name)}</b><p>${due} · ${renewal.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</p></div><strong>${money(sub.price)}</strong></div>`;
+ }).join(''):'<p class="reminder-empty">No renewals in this time window.</p>';
+}
+document.querySelectorAll('[data-reminder-days]').forEach(button=>button.addEventListener('click',()=>{
+ reminderWindowDays=Number(button.dataset.reminderDays);
+ renderReminders();
+}));
 function render(){
+ renderReminders();
  const m=subscriptions.reduce((a,s)=>a+monthly(s),0);
  $('monthlyTotal').textContent=money(m);$('yearlyTotal').textContent=money(m*12).replace(/\.00$/,'');$('activeCount').textContent=subscriptions.length;
  const upcoming=[...subscriptions].sort((a,b)=>nextDate(a)-nextDate(b));
