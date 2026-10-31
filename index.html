@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090f1c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SubZero">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <title>SubZero — Subscription Control</title>
 <style>
 :root { color-scheme: light dark; --bg: light-dark(#f4f7fb,#090f1c); --panel: light-dark(#ffffff,#111b2b); --panel2: light-dark(#edf2f8,#172438); --text: light-dark(#132033,#f1f6ff); --muted: light-dark(#64748b,#94a8c4); --line: light-dark(#dce5f0,#25344b); --accent:#45d7e8; --accent2:#9b8cff; --good:#38d9a9; --danger:#ff718b; }
@@ -15,7 +22,7 @@ button { cursor:pointer; }
 .shell { max-width:1180px; margin:0 auto; }
 .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:32px; }
 .brand { display:flex; align-items:center; gap:12px; }
-.logo { width:44px; height:44px; border-radius:14px; display:grid; place-items:center; background:linear-gradient(145deg,#5ee7f3,#7c70f6); color:#071222; font-size:25px; font-weight:900; box-shadow:0 8px 30px #45d7e82a; }
+.logo { width:44px; height:44px; border-radius:12px; display:block; object-fit:cover; box-shadow:0 8px 30px #45d7e82a; }
 .brand h1 { font-size:22px; margin:0; letter-spacing:-.7px; }
 .brand p { margin:3px 0 0; color:var(--muted); font-size:12px; }
 .top-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
@@ -135,7 +142,7 @@ h2 { margin:8px 0 7px; font-size:clamp(27px,4vw,39px); line-height:1.08; letter-
 <div class="app" id="appRoot">
   <main class="shell">
     <header class="topbar">
-      <div class="brand"><div class="logo">❄</div><div><h1>SubZero</h1><p>YOUR SUBSCRIPTIONS. UNDER CONTROL.</p></div></div>
+      <div class="brand"><img class="logo" src="./icon-192.png" alt="SubZero logo"><div><h1>SubZero</h1><p>YOUR SUBSCRIPTIONS. UNDER CONTROL.</p></div></div>
       <div class="top-actions"><span class="pill">✦ Private by design</span><button class="btn" id="addTop">＋ Add subscription</button></div>
     </header>
     <section class="auth-panel" aria-label="Account and sync">
@@ -470,6 +477,11 @@ try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{session
 if(!checkRecoveryLink() && session&&publishableKey){localBackup=readLocal();cloudLoad().catch(e=>{authMessage('Could not load cloud data: '+e.message);signOut();});}
 $('exportBtn').addEventListener('click',()=>{const csv=['Name,Price,Frequency,Next payment,Category',...subscriptions.map(s=>[s.name,s.price,s.frequency,s.date,s.category].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','))].join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='subzero-subscriptions.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('Backup CSV downloaded.');});
 render();
+</script>
+<script>
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(err => console.warn("SubZero offline setup unavailable:", err)));
+}
 </script>
 </body>
 </html>
