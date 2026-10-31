@@ -135,6 +135,10 @@ h2 { margin:8px 0 7px; font-size:clamp(27px,4vw,39px); line-height:1.08; letter-
 .reminder-item p {margin:4px 0 0;color:var(--muted);font-size:11px}
 .reminder-item strong {font-size:13px;white-space:nowrap}
 .reminder-empty {color:var(--muted);font-size:12px;margin:4px 0}
+.notification-setup { margin:0 0 20px;padding:17px 20px;border:1px solid var(--line);border-radius:18px;background:var(--panel);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap; }
+.notification-setup h3 {margin:0 0 5px;font-size:15px}
+.notification-setup p {margin:0;color:var(--muted);font-size:12px;line-height:1.5;max-width:630px}
+.notification-setup .notification-status {margin-top:7px}
 </style>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=subzeroTurnstileLoaded" async defer></script>
 </head>
@@ -164,6 +168,10 @@ h2 { margin:8px 0 7px; font-size:clamp(27px,4vw,39px); line-height:1.08; letter-
       <article class="insight"><div class="insight-label">Next 7 days</div><div class="insight-value" id="next7Total">$0.00</div><div class="insight-detail" id="next7Detail">No upcoming payments</div></article>
       <article class="insight"><div class="insight-label">Next 30 days</div><div class="insight-value" id="next30Total">$0.00</div><div class="insight-detail" id="next30Detail">Based on scheduled renewals</div></article>
       <article class="insight"><div class="insight-label">Largest monthly cost</div><div class="insight-value" id="largestCost">$0.00</div><div class="insight-detail" id="largestDetail">No subscriptions yet</div></article>
+    </section>
+    <section class="notification-setup" aria-label="Push notification setup">
+      <div><h3>🔔 iPhone notifications</h3><p>Allow SubZero notifications on this device. Automatic delivery is not connected yet; this step only requests permission.</p><p id="notificationStatus" class="notification-status" role="status">Checking device support…</p></div>
+      <button type="button" class="btn secondary" id="enableNotifications">Allow notifications</button>
     </section>
     <section class="reminder-panel" aria-label="Subscription reminders">
       <div class="reminder-heading"><div><h3>🔔 Renewal reminders <span id="reminderCount" class="auth-message"></span></h3><p>Upcoming payments while you have SubZero open. No push notifications yet.</p></div>
@@ -205,6 +213,41 @@ h2 { margin:8px 0 7px; font-size:clamp(27px,4vw,39px); line-height:1.08; letter-
 <div class="toast" id="toast" role="status"></div>
 <script>
 const $ = id => document.getElementById(id);
+// Push permission is separate from push subscription and server-side delivery.
+// Do not claim reminders are enabled until VAPID subscription, secure storage,
+// and a scheduled sender are implemented and tested.
+function notificationSupport() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+  return true;
+}
+function updateNotificationStatus() {
+  const status = $('notificationStatus');
+  const button = $('enableNotifications');
+  if (!notificationSupport()) {
+    status.textContent = 'Push notifications are not supported in this browser. On iPhone, open SubZero from its Home Screen (iOS 16.4+).';
+    button.disabled = true;
+  } else if (Notification.permission === 'granted') {
+    status.textContent = 'Permission allowed. Automatic renewal alerts still need the push server connection.';
+    button.disabled = true;
+    button.textContent = 'Permission allowed';
+  } else if (Notification.permission === 'denied') {
+    status.textContent = 'Notifications are blocked. Change permission in your device settings if you want alerts later.';
+    button.disabled = true;
+  } else {
+    status.textContent = 'Permission not requested. Automatic delivery will be connected in a later step.';
+  }
+}
+$('enableNotifications').addEventListener('click', async () => {
+  if (!notificationSupport()) return;
+  try {
+    const result = await Notification.requestPermission();
+    updateNotificationStatus();
+    if (result === 'granted') showToast('Permission allowed. Push delivery is not connected yet.');
+  } catch (err) {
+    $('notificationStatus').textContent = 'Permission request failed: ' + err.message;
+  }
+});
+updateNotificationStatus();
 const KEY = 'subzero-subscriptions-v1';
 // Public project URL. Paste only your Supabase PUBLISHABLE key into the setup field.
 const SUPABASE_URL = 'https://nekelfgwoitfjjyvjvmf.supabase.co';
