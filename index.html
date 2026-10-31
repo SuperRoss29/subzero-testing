@@ -170,8 +170,8 @@ h2 { margin:8px 0 7px; font-size:clamp(27px,4vw,39px); line-height:1.08; letter-
       <article class="insight"><div class="insight-label">Largest monthly cost</div><div class="insight-value" id="largestCost">$0.00</div><div class="insight-detail" id="largestDetail">No subscriptions yet</div></article>
     </section>
     <section class="notification-setup" aria-label="Push notification setup">
-      <div><h3>🔔 iPhone notifications</h3><p>Allow SubZero notifications on this device. Automatic delivery is not connected yet; this step only requests permission.</p><p id="notificationStatus" class="notification-status" role="status">Checking device support…</p></div>
-      <button type="button" class="btn secondary" id="enableNotifications">Allow notifications</button>
+      <div><h3>🔔 iPhone notifications</h3><p>Register this device for future renewal alerts. Automatic delivery is not active until the scheduled sender is set up.</p><p id="notificationStatus" class="notification-status" role="status">Checking device support…</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px;min-width:min(100%,280px)"><label for="vapidPublicKey" style="font-size:12px">VAPID Public Key (public only)</label><input id="vapidPublicKey" type="text" autocomplete="off" spellcheck="false" placeholder="Paste your Public Key" style="padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);width:100%"><button type="button" class="btn secondary" id="enableNotifications">Connect this device</button></div>
     </section>
     <section class="reminder-panel" aria-label="Subscription reminders">
       <div class="reminder-heading"><div><h3>🔔 Renewal reminders <span id="reminderCount" class="auth-message"></span></h3><p>Upcoming payments while you have SubZero open. No push notifications yet.</p></div>
@@ -220,31 +220,72 @@ function notificationSupport() {
   if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
   return true;
 }
+const VAPID_STORAGE_KEY = 'subzero-vapid-public-key-v1';
+$('vapidPublicKey').value = localStorage.getItem(VAPID_STORAGE_KEY) || '';
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+}
 function updateNotificationStatus() {
   const status = $('notificationStatus');
   const button = $('enableNotifications');
   if (!notificationSupport()) {
-    status.textContent = 'Push notifications are not supported in this browser. On iPhone, open SubZero from its Home Screen (iOS 16.4+).';
+    status.textContent = 'Push is unavailable here. On iPhone, launch SubZero from its Home Screen (iOS 16.4+).';
     button.disabled = true;
-  } else if (Notification.permission === 'granted') {
-    status.textContent = 'Permission allowed. Automatic renewal alerts still need the push server connection.';
-    button.disabled = true;
-    button.textContent = 'Permission allowed';
   } else if (Notification.permission === 'denied') {
-    status.textContent = 'Notifications are blocked. Change permission in your device settings if you want alerts later.';
+    status.textContent = 'Notifications blocked. Enable them in your device settings.';
     button.disabled = true;
   } else {
-    status.textContent = 'Permission not requested. Automatic delivery will be connected in a later step.';
+    status.textContent = Notification.permission === 'granted'
+      ? 'Permission allowed. Sign in, enter your public key, then connect this device.'
+      : 'Sign in, enter your public key, then connect this device to request permission.';
+    button.disabled = false;
   }
 }
 $('enableNotifications').addEventListener('click', async () => {
+  const status = $('notificationStatus');
+  const button = $('enableNotifications');
   if (!notificationSupport()) return;
+  if (!session) {
+    status.textContent = 'Sign in to SubZero cloud sync before connecting notifications.';
+    return;
+  }
+  const key = $('vapidPublicKey').value.trim();
+  if (!/^[A-Za-z0-9_-]{80,100}$/.test(key)) {
+    status.textContent = 'Paste the VAPID Public Key from Cloud Shell (never the Private Key).';
+    return;
+  }
+  button.disabled = true;
   try {
-    const result = await Notification.requestPermission();
-    updateNotificationStatus();
-    if (result === 'granted') showToast('Permission allowed. Push delivery is not connected yet.');
+    if (!await ensureSession()) throw new Error('Please sign in first.');
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') throw new Error('Notification permission was not granted.');
+    const registration = await navigator.serviceWorker.ready;
+    const existing = await registration.pushManager.getSubscription();
+    // Do not silently replace an existing subscription created with a different key.
+    const pushSub = existing || await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(key)
+    });
+    const response = await fetch(SUPABASE_URL + '/functions/v1/register-push', {
+      method: 'POST',
+      headers: {
+        'apikey': publishableKey,
+        'Authorization': 'Bearer ' + session.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(pushSub.toJSON())
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) throw new Error(data.error || 'Registration failed (' + response.status + ')');
+    localStorage.setItem(VAPID_STORAGE_KEY, key);
+    status.textContent = 'Device registered successfully! Scheduled reminder delivery is not active yet.';
+    showToast('Push device registered.');
   } catch (err) {
-    $('notificationStatus').textContent = 'Permission request failed: ' + err.message;
+    status.textContent = 'Connection failed: ' + (err?.message || String(err));
+  } finally {
+    button.disabled = false;
   }
 });
 updateNotificationStatus();
